@@ -3,53 +3,81 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from '../../axios';
 import IngredientForm from './IngredientForm';
 import IngredientList from './IngredientList';
-import Search from './Search';
 import withErrorHandler from './../hoc/withErrorHandler';
 
 const Ingredients = (props) => {
   const [userIngredients, setUserIngredients] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);  
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    console.log('RENDERING INGREDIENTS', userIngredients);
+    axios.get('https://simple-firebase-storage.firebaseio.com/ingredients1.json')
+      .then(responseData => {
+        const loadedIngredients = [];
+        Object.keys(responseData.data).map(key => loadedIngredients.push({
+          id: key,
+          title: responseData.data[key].title,
+          amount: responseData.data[key].amount
+        }));
+        setUserIngredients(loadedIngredients);
+      }) //TODO: 1
+    // .catch(error => {      
+    //   props.setError(error);})
+    // .finally(() => {
+    //   setIsLoading(false);
+    // });
+
+  }, []);
+
+  useEffect(() => {
+    console.log('RENDERING INGREDIENTS ', userIngredients);
   }, [userIngredients]);
 
-  const filteredIngredientsHandler = useCallback(filteredIngredients => {
-    setUserIngredients(filteredIngredients);
-  }, []);
 
   const addIngredientHandler = ingredient => {
     setIsLoading(true);
-    axios.post('/ingredients.json',ingredient)  
+    axios.post('/ingredients1', ingredient)
       .then(response => {
-        setIsLoading(false);
         return response.json();
       })
       .then(responseData => {
+        console.log('responseData', responseData);
+        setIsLoading(false);
         setUserIngredients(prevIngredients => [
           ...prevIngredients,
-          { id: responseData.name, ...ingredient }
+          { id: responseData.data.name, ...ingredient }
         ]);
-      });
+      }) // TODO: 2 This part could/should be handled by Error Boundaries yet see the effect of catch by uncommenting the code below
+    // .catch(error => {      
+    //   props.setError(error);})
+    // .finally(() => {
+    //   setIsLoading(false);
+    // });
   };
 
   const removeIngredientHandler = ingredientId => {
     setIsLoading(true);
-    axios.delete( `/ingredients/${ingredientId}.jon`) 
-    .then(response => {
-      setIsLoading(false);
-      setUserIngredients(prevIngredients =>
-        prevIngredients.filter(ingredient => ingredient.id !== ingredientId)
-      );
-    }).catch(error => {
-      props.setError('Something went wrong!');
-      setIsLoading(false);
-    });
+    axios.delete(`/ingredients1/${ingredientId}.jon`)
+      .then(response => {
+        console.log('exectues!');
+        return response.json();
+      })
+      .then(response => {
+        console.log('remove response', response);
+        setUserIngredients(prevIngredients =>
+          prevIngredients.filter(ingredient => ingredient.id !== ingredientId)
+        );
+      }) // TODO: 3
+    // .catch(error => {      
+    //   props.setError('Something went wrong!');
+    // })
+    // .finally(() => {
+    //   setIsLoading(false);
+    // });
   };
 
 
   return (
-    <div className="App">      
+    <div className="App">
 
       <IngredientForm
         onAddIngredient={addIngredientHandler}
@@ -57,7 +85,6 @@ const Ingredients = (props) => {
       />
 
       <section>
-        <Search onLoadIngredients={filteredIngredientsHandler} />
         <IngredientList
           ingredients={userIngredients}
           onRemoveItem={removeIngredientHandler}

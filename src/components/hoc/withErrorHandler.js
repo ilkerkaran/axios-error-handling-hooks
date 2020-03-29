@@ -30,7 +30,7 @@ const withErrorHandler = (WrappedComponent, axios) => {
 
     return (      
       <>    
-      {error && <ErrorModal onClose={() => setError(null)}>{error}</ErrorModal>}
+      {error && <ErrorModal onClose={() => setError(null)}>{error.toString()}</ErrorModal>}
         <WrappedComponent setError ={setError} {...props} />
       </>
     );
